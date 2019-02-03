@@ -1,0 +1,57 @@
+<html>
+<head>
+    <title>Smoke Tests</title>
+    <meta http-equiv="refresh" content="200"/>
+    <link rel="stylesheet" href="vendor/bootstrap/css/lightbox.css">
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">  <!-- new css not working ideally -->
+    <link rel="stylesheet" href="smoketests.css"/>
+    <script src="vendor/bootstrap/js/jquery-3.3.1.min.js"></script>
+
+</head>
+<body>
+
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header navbar-inverse">
+            <span class="navbar-brand pull-left"><h3>CTR Smoketests</h3></span>
+
+        </div>
+    </div>
+</div>
+<div class="container">
+
+    <div id="tests">
+        <div class="accordion" id="accordion">
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="utils.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="vendor/bootstrap/js/lightbox.js"></script>
+
+<script>
+    let rawTestRunInfo = utils.loadDoc("logs/runInfo.txt", "text");
+    let testRunInfo = utils.getTestRunInfo(rawTestRunInfo);
+
+    let allTests = [
+        // {dir: 'smoketest', name: 'coverage-result', xslDoc: "coverage.xsl" },
+        {dir: 'smoketest', name: 'test-result', xslDoc: "overallResult.xsl" }
+    ];
+
+    utils.loadAndDisplayPage(allTests, testRunInfo);
+
+</script>
+<script>
+    $(".datesListener").on('click', function (e) {
+        let date = $(this).attr('href');
+        e.preventDefault();
+        $('#tests').empty();
+        utils.loadNewResults(utils.getResult(date));
+    });
+</script>
+</body>
+</html>

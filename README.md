@@ -1,5 +1,7 @@
 # ctr-smoketest
 
+The purpose of this is to just go to specific pages, or all the CTR pages and if any fail to load an error and screenshot will be captured.
+
 Prerequisites
 
 1) Install Python2.7 (multi-run.py assumes it is installed in default c:\Python27)

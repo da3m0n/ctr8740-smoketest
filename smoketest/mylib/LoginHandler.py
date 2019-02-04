@@ -32,7 +32,7 @@ class LoginHandler(object):
         override = self.login_info.get(sys.argv[1])
         print("get override", override, sys.argv[1])
         if override is None:
-            self.utils.login(self.driver, '', '', self.test_helper, self.test_log)
+            self.utils.login(self.driver, 'root', 'admin123', self.test_helper, self.test_log)
         else:
             self.utils.login(self.driver, override[0], override[1], self.test_helper, self.test_log)
 

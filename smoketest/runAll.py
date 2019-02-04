@@ -118,10 +118,12 @@ class RunAll:
         smoke_test.create("Status/Alarms")
         # smoke_test.create("System Configuration/Admin/Users")
         # smoke_test.create("Status/Manufacture Details")
-        # smoke_test.create("Radio Configuration/Radio Links")
+        smoke_test.create("Radio Configuration/Radio Links")
         # smoke_test.create("Switching & Routing Configuration/Port Manager")
         # smoke_test.create("Switching & Routing Configuration/Interfaces")
 
+        # OR
+        
         # if you want to run over all the screens, uncomment below
         # tests = RunAll.get_screens(self.driver)
         #

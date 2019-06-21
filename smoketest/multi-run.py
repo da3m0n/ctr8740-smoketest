@@ -45,9 +45,15 @@ run_dates_path = os.path.join(Utils.log_dir(), 'logs', "runInfo.txt")
 
 
 def run_some(start, end):
+    from sys import platform as platform
+
+    if platform == "win32":
+        path_to_python = "c:\\Python27\\python.exe"
+    else:
+        path_to_python = "/cygdrive/c/cygwin64/bin/python"
     for i in range(start, end):
         time.sleep(2)
-        opens.append(subprocess.Popen(["c:\\Python27\\python.exe", "./runAll.py", sys.argv[i], "chrome", path_to_dir]))
+        opens.append(subprocess.Popen([path_to_python, "./runAll.py", sys.argv[i], "chrome", path_to_dir]))
 
     [p.wait() for p in opens]
 

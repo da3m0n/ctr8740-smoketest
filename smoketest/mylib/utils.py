@@ -105,7 +105,7 @@ class Utils(object):
 
         try:
             # we have to wait for the page to refresh, the last thing that seems to be updated is the title
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "layout_device_name")))
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "layout_device_name")))
             print('Login Successful')
             time.sleep(5)
         except Exception as e:
@@ -120,12 +120,12 @@ class Utils(object):
         # find the logout button
         try:
             time.sleep(1)
-            self.click_element("top_menu_users")
-            # logoutTag = driver.find_element_link_text('Logout')
-
+            self.click_element("profileHeader")
             time.sleep(3)
-            logoutTag = self.driver.find_element_by_link_text('Logout')
-            logoutTag.click()
+            profile_popup = self.driver.find_element(By.ID, 'profilePopupMenu')
+
+            sign_out = profile_popup.find_element(By.XPATH, "a/div/span[text()='SIGN OUT']")
+            sign_out.click()
 
             # self.click_element(logoutTag)
             # self.click_element("top_menu_logout")
@@ -139,7 +139,7 @@ class Utils(object):
 
     @classmethod
     def window_init(self, driver):
-        driver.set_window_size(1200, 800)
+        driver.set_window_size(1200, 1150)
         # handle = driver.window_handles
 
     @classmethod
@@ -270,12 +270,12 @@ class Utils(object):
         print('side folders', len(side_menus))
 
     def save_screenshot(self, test_name, test_type):
-        test_name = test_name.rstrip('.')
+        # test_name = test_name.rstrip('.')
+        test_name = test_name.replace('/', '-')
 
         # screenshots_dir = self.pwd + '\\logs\\' + self.date + '\\' + test_type + '\\screenshots'
         # screenshots_dir = os.path.join(GlobalFuncs.path(), self.ipAddress, 'screenshots')
         screenshots_dir = os.path.join(GlobalFuncs.path(), self.ipAddress, 'screenshots')
-        print "screenshot " + screenshots_dir
         GlobalFuncs.ensure_path_exists(screenshots_dir)
         self.test_log.store_screenshot_info(test_name, screenshots_dir)
         self.driver.save_screenshot(os.path.join(screenshots_dir, test_name + '.png'))
@@ -305,10 +305,10 @@ class Utils(object):
 
     def navigate_to_screen(self, screen_name):
         time.sleep(1)
-        breadcrumbs = screen_name.split('/')
-        self.__navigate_to_location(breadcrumbs)
+        # breadcrumbs = screen_name.split('/')
+        self.__navigate_to_location(screen_name)
         # self.driver.switch_to_frame('frame_content')
-        self.test_log.start(breadcrumbs[-1])
+        self.test_log.start(screen_name[-1])
 
     def __navigate_to_location(self, breadcrumbs):
         self.driver.switch_to_default_content()
@@ -322,10 +322,13 @@ class Utils(object):
             last_el.click()
         else:
             folder = WebDriverWait(root, 20).until(
-                my_visibility_of_elements((By.XPATH, "//div[@class='side_menu_folder']"), breadcrumb))
+                my_visibility_of_elements((By.XPATH, "//span[@class='menu-tree-expanded-folder-icon']"), breadcrumb))
+            # print "folder", folder
+
             expanded = len(folder.find_elements_by_class_name('expanded')) > 0
             if not expanded:
                 folder.click()
+
             self.__navigate_to_location_rec(folder, breadcrumbs[1:])
 
 

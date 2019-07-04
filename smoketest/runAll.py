@@ -2,6 +2,8 @@ import sys
 import traceback
 import os.path, time
 
+from selenium.common.exceptions import NoSuchElementException
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from selenium.webdriver.common.by import By
@@ -50,46 +52,78 @@ class RunAll:
 
         self.run_smoke_test()
 
+        # def doExpand(level):
+        #     expanded = 0
+        #     for each menu item at level
+        #         if submenu:
+        #             expand menu
+        #             expanded++
+        #     if expanded > 0:
+        #         doExpand(level + 1)
+
+    @classmethod
+    def element_exists(cls, web_element, class_name):
+        try:
+            if web_element.find_element(By.CLASS_NAME, class_name):
+                return True
+        except NoSuchElementException as e:
+            return False
+
     @staticmethod
-    def expand_folders(driver):
-        has_unopened = True
+    def do_expand(driver, level):
+        expanded = 0
+        list = []
+        menu_items_by_level = driver.find_elements_by_xpath("//div[@aria-level='" + str(level) + "']")
+        # menu_items_by_level = driver.find_elements_by_xpath("//a[@href='undefined']")
 
-        while has_unopened:
-            folders = driver.find_elements_by_xpath("//div[@class='side_menu_folder']")
-            has_unopened = False
-            for folder in folders:
+        for m in menu_items_by_level:
 
-                collapsed = len(folder.find_elements_by_xpath("div[@class='side_menu_toggle collapsed']")) > 0
-                if folder.is_displayed() and collapsed:
-                    name = folder.text
-                    driver.execute_script("arguments[0].scrollIntoView(true);", folder)
-                    time.sleep(2)
-                    search = "//div[normalize-space(.)='" + name + "']/div[@class='side_menu_toggle collapsed']"
-                    folder = folder.find_elements_by_xpath(search)[0]
-                    folder.click()
-                    search = "//div[normalize-space(.)='" + name + "']/div[@class='side_menu_toggle expanded']"
-                    WebDriverWait(driver, 35).until(EC.presence_of_element_located((By.XPATH, search)))
+            menu_tree_row = m.find_element(By.CLASS_NAME, "menu-tree-row")
 
-                    has_unopened = True
-                    break
+            if RunAll.element_exists(menu_tree_row, "menu-tree-collapsed-folder-icon"):
+                m.click()
+                time.sleep(1)
+                expanded += 1
+            elif RunAll.element_exists(menu_tree_row, "menu-tree-expanded-folder-icon"):
+                expanded += 1
+            else:
+                list.append(m)
+
+        if expanded > 0:
+            sub_list = RunAll.do_expand(driver, level + 1)
+            for i in sub_list:
+                list.append(i)
+        return list
+
+    @staticmethod
+    def make_path(el):
+        res = []
+        cur = el
+
+        try:
+            while cur:
+                if cur.get_attribute('class') == "menu-tree-item":
+                    try:
+                        res.insert(0, cur.find_element(By.XPATH, "div[@class='menu-tree-row' or @class='menu-tree-row "
+                                                                 "selected']").text)
+                    except:
+                        print "not found", cur
+
+                cur = cur.find_element(By.XPATH, "..")
+        except NoSuchElementException:
+            return res
 
     @staticmethod
     def get_screens(driver):
-        RunAll.expand_folders(driver)
-        items = driver.find_elements_by_xpath("//a[@class='side_menu_entry']")
-
+        items_list = RunAll.do_expand(driver, 1)
         result = []
-        for item in items:
-            path = [item.text]
-            container = item.find_element(By.XPATH, "..")
-            folders = container.find_elements_by_xpath("preceding-sibling::div[1]")
 
-            while len(folders) > 0:
-                path.insert(0, folders[0].text)
-                container = container.find_element(By.XPATH, "..")
-                folders = container.find_elements_by_xpath("preceding-sibling::div[@class='side_menu_folder'][1]")
-            result.append("/".join(path))
+        for item in items_list:
+            path = RunAll.make_path(item)
+            # print path
+            result.append(path)
 
+        print result
         return result
 
     def run_smoke_test(self):
@@ -107,7 +141,7 @@ class RunAll:
         smoke_test = SmokeTest(self.driver, self.test_log, test_helper)
         try:
             side_menu = WebDriverWait(self.driver, 35).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "side_menu_folder")))
+                EC.presence_of_element_located((By.CLASS_NAME, "menu-tree-item")))
         except e:
             test_helper.assert_false(True, "unable to find side menu", "side_menu")
             login_handler.end()
@@ -115,18 +149,28 @@ class RunAll:
             raise e
 
         # if you want to run individual tests
-        smoke_test.create("Status/Alarms")
+        # change smoke_test.create to take the parameters as a list
+
+        # tests = RunAll.get_screens(self.driver)
+
+        # smoke_test.create("Status/Equipment")
+        smoke_test.create(["Status", "Alarms"])
+        # smoke_test.create("Status/System Log")
+        # smoke_test.create(["Status"]["Manufacturing Details"])
+        # smoke_test.create("Status/ERPS")
+        # smoke_test.create("Switching and Routing/Quality of Service/Classifiers")
+
         # smoke_test.create("System Configuration/Admin/Users")
         # smoke_test.create("Status/Manufacture Details")
-        smoke_test.create("Radio Configuration/Radio Links")
+        # smoke_test.create("Radio Configuration/Radio Links")
         # smoke_test.create("Switching & Routing Configuration/Port Manager")
         # smoke_test.create("Switching & Routing Configuration/Interfaces")
 
         # OR
         
         # if you want to run over all the screens, uncomment below
-        # tests = RunAll.get_screens(self.driver)
-        #
+        tests = RunAll.get_screens(self.driver)
+
         # for test in tests:
         #     try:
         #         if not smoke_test.create(test):

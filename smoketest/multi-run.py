@@ -9,6 +9,8 @@ import time
 import requests
 from xml.etree.ElementTree import Comment
 
+from requests import ConnectionError
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from smoketest.mylib.utils import Utils
@@ -24,9 +26,12 @@ def ensure_path_exists(path):
 
 
 logs_dir = os.path.join(Utils.log_dir(), 'logs')
-sub_path = requests.get('http://localhost:3000/next').content
-path_to_dir = os.path.join(os.getcwd(), 'logs', *sub_path.split('/'))
-ensure_path_exists(path_to_dir)
+try:
+    sub_path = requests.get('http://localhost:3000/next').content
+    path_to_dir = os.path.join(os.getcwd(), 'logs', *sub_path.split('/'))
+    ensure_path_exists(path_to_dir)
+except ConnectionError:
+    print "Need to start webserver. Run ./startup.sh from ", os.getcwd()
 
 
 def signal_handler(sig, frame):

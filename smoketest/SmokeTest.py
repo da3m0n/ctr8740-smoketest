@@ -23,7 +23,7 @@ class SmokeTest:
             time.sleep(3)
             # self.driver.execute_script("document.getElementById('tableWidget1_3_mapping').innerHTML=\"\";")
 
-            WebDriverWait(self.driver, 45).until(EC.invisibility_of_element_located((By.CLASS_NAME, "loading_tag")))
+            WebDriverWait(self.driver, 45).until(EC.invisibility_of_element_located((By.ID, "loading")))
 
             warning_elements = self.driver.find_elements_by_class_name('warning')
 
@@ -43,5 +43,18 @@ class SmokeTest:
 
         except StaleElementReferenceException as e:
             print('StaleElementException', e)
+        except Exception as e:
+            name = ""
+            count = 1
+
+            for s in screen_name:
+                if not count == len(screen_name):
+                    name += s + '/'
+                    count += 1
+                else:
+                    name += s
+
+            self.test_helper.assert_true(True, name + ' not displayed', name)
+            print('Failure', e)
 
         return True

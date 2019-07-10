@@ -93,7 +93,7 @@ class TestLog(object):
 
         tree = ET.ElementTree(self.root)
 
-        tests = os.path.join(GlobalFuncs.path(), self.ipAddress)
+        tests = os.path.join(GlobalFuncs.path(), Utils.format_ip_address(self.ipAddress))
 
         if not os.path.exists(tests):
             os.mkdir(tests)

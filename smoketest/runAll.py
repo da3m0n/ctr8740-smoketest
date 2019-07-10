@@ -49,47 +49,23 @@ class RunAll:
         print('init')
 
     def run_all(self):
-
         self.run_smoke_test()
-
-        # def doExpand(level):
-        #     expanded = 0
-        #     for each menu item at level
-        #         if submenu:
-        #             expand menu
-        #             expanded++
-        #     if expanded > 0:
-        #         doExpand(level + 1)
-
-    @classmethod
-    def element_exists(cls, web_element, class_name):
-        try:
-            if web_element.find_element(By.CLASS_NAME, class_name):
-                return True
-        except NoSuchElementException as e:
-            return False
 
     @staticmethod
     def do_expand(driver, level):
-        expanded = 0
+        expanded = False
         list = []
-        menu_items_by_level = driver.find_elements_by_xpath("//div[@aria-level='" + str(level) + "']")
+        root = driver.find_element(By.CLASS_NAME,'widget_ctr.widgets.Menu');
+        menu_items_by_level = root.find_elements_by_xpath(".//div[@aria-level='" + str(level) + "']")
         # menu_items_by_level = driver.find_elements_by_xpath("//a[@href='undefined']")
 
         for m in menu_items_by_level:
-
-            menu_tree_row = m.find_element(By.CLASS_NAME, "menu-tree-row")
-
-            if RunAll.element_exists(menu_tree_row, "menu-tree-collapsed-folder-icon"):
-                m.click()
-                time.sleep(1)
-                expanded += 1
-            elif RunAll.element_exists(menu_tree_row, "menu-tree-expanded-folder-icon"):
-                expanded += 1
-            else:
+            if Utils.open_folder(m) < 1:
                 list.append(m)
+            else:
+                expanded = True
 
-        if expanded > 0:
+        if expanded:
             sub_list = RunAll.do_expand(driver, level + 1)
             for i in sub_list:
                 list.append(i)
@@ -99,13 +75,17 @@ class RunAll:
     def make_path(el):
         res = []
         cur = el
+        count = 0
 
+# todo fix population of menus. Not all are getting into list
         try:
             while cur:
+
                 if cur.get_attribute('class') == "menu-tree-item":
                     try:
                         res.insert(0, cur.find_element(By.XPATH, "div[@class='menu-tree-row' or @class='menu-tree-row "
                                                                  "selected']").text)
+                        count += 1
                     except:
                         print "not found", cur
 
@@ -120,10 +100,8 @@ class RunAll:
 
         for item in items_list:
             path = RunAll.make_path(item)
-            # print path
             result.append(path)
 
-        print result
         return result
 
     def run_smoke_test(self):
@@ -154,13 +132,13 @@ class RunAll:
         # tests = RunAll.get_screens(self.driver)
 
         # smoke_test.create("Status/Equipment")
-        smoke_test.create(["Status", "Alarms"])
+        # smoke_test.create(["Status", "Alarms"])
         # smoke_test.create("Status/System Log")
         # smoke_test.create(["Status"]["Manufacturing Details"])
         # smoke_test.create("Status/ERPS")
         # smoke_test.create("Switching and Routing/Quality of Service/Classifiers")
 
-        # smoke_test.create("System Configuration/Admin/Users")
+        # smoke_test.create(["System Configuration","Admin","Users"])
         # smoke_test.create("Status/Manufacture Details")
         # smoke_test.create("Radio Configuration/Radio Links")
         # smoke_test.create("Switching & Routing Configuration/Port Manager")
@@ -171,13 +149,13 @@ class RunAll:
         # if you want to run over all the screens, uncomment below
         tests = RunAll.get_screens(self.driver)
 
-        # for test in tests:
-        #     try:
-        #         if not smoke_test.create(test):
-        #             return False
-        #     except Exception as ex:
-        #         # error_file.write("Failed running: " + test + ex + '\r\n')
-        #         print("Failed running ", test, ex)
+        for test in tests:
+            try:
+                if not smoke_test.create(test):
+                    return False
+            except Exception as ex:
+                # error_file.write("Failed running: " + test + ex + '\r\n')
+                print("Failed running ", test, ex)
 
         login_handler.end()
         self.test_log.close()

@@ -269,13 +269,17 @@ class Utils(object):
         side_menus = self.driver.find_elements_by_class('side_menu_folder')
         print('side folders', len(side_menus))
 
+    @staticmethod
+    def format_ip_address(ip_address):
+        return ip_address.replace(":", " Port ")
+
     def save_screenshot(self, test_name, test_type):
         # test_name = test_name.rstrip('.')
         test_name = test_name.replace('/', '-')
 
         # screenshots_dir = self.pwd + '\\logs\\' + self.date + '\\' + test_type + '\\screenshots'
         # screenshots_dir = os.path.join(GlobalFuncs.path(), self.ipAddress, 'screenshots')
-        screenshots_dir = os.path.join(GlobalFuncs.path(), self.ipAddress, 'screenshots')
+        screenshots_dir = os.path.join(GlobalFuncs.path(), Utils.format_ip_address(self.ipAddress), 'screenshots')
         GlobalFuncs.ensure_path_exists(screenshots_dir)
         self.test_log.store_screenshot_info(test_name, screenshots_dir)
         self.driver.save_screenshot(os.path.join(screenshots_dir, test_name + '.png'))
@@ -306,30 +310,79 @@ class Utils(object):
     def navigate_to_screen(self, screen_name):
         time.sleep(1)
         # breadcrumbs = screen_name.split('/')
-        self.__navigate_to_location(screen_name)
+        res = self.__navigate_to_location(screen_name)
         # self.driver.switch_to_frame('frame_content')
         self.test_log.start(screen_name[-1])
+        return res
 
     def __navigate_to_location(self, breadcrumbs):
         self.driver.switch_to_default_content()
-        self.__navigate_to_location_rec(self.driver, breadcrumbs)
+        return self.__navigate_to_location_rec(self.driver.find_element(By.CLASS_NAME,'widget_ctr.widgets.Menu'), breadcrumbs, 0)
 
-    def __navigate_to_location_rec(self, root, breadcrumbs):
-        breadcrumb = breadcrumbs[0]
-        if len(breadcrumbs) == 1:
-            WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located((By.LINK_TEXT, breadcrumbs[0])))
-            last_el = self.driver.find_element_by_link_text(breadcrumbs[0])
-            last_el.click()
+    def __navigate_to_location_rec(self, root, breadcrumbs, pos):
+        breadcrumb = breadcrumbs[pos]
+        if len(breadcrumbs) == pos + 1:
+            WebDriverWait(root, 20).until(EC.visibility_of_element_located((By.LINK_TEXT, breadcrumbs[pos])))
+            last_el = root.find_element_by_link_text(breadcrumbs[pos])
+
+            # there is a problem here since the search input box is sticky it floats above the
+            # menu item, that means that selenium does not scroll the menu to the right spot, sometimes
+            # leaving it under the search input, but that means it cannot click on it.
+
+            # in order to get around this on the first menu (the one with no link)
+            # we find the top level otem and alwaysnscroll up to it
+            from selenium.webdriver.common.action_chains import ActionChains
+            base = root.find_element_by_xpath("//div[@aria-level='0']")
+            ActionChains(self.driver).move_to_element(base).perform()
+
+            if not last_el.get_attribute('href') is None:
+                last_el.click()
+                return True
+            else:
+                return False
         else:
-            folder = WebDriverWait(root, 20).until(
-                my_visibility_of_elements((By.XPATH, "//span[@class='menu-tree-expanded-folder-icon']"), breadcrumb))
+
+            menus = root.find_elements_by_xpath("//div[@aria-level='" + str(pos + 1) + "']")
+            for m in menus:
+                try:
+                    if m.find_element(By.CLASS_NAME, "menu-entity").text == breadcrumb:
+                        Utils.open_folder(m)
+                        return self.__navigate_to_location_rec(m, breadcrumbs, pos + 1)
+                except NoSuchElementException:
+                    pass
+            return False
+
             # print "folder", folder
 
-            expanded = len(folder.find_elements_by_class_name('expanded')) > 0
-            if not expanded:
-                folder.click()
+            # expanded = len(folder.find_elements_by_class_name('expanded')) > 0
+            # if not expanded:
+            #     folder.click()
 
-            self.__navigate_to_location_rec(folder, breadcrumbs[1:])
+
+    @staticmethod
+    def open_folder(menu_item):
+        expanded = 0
+        try:
+            tree_row = menu_item.find_element(By.CLASS_NAME, "menu-tree-row")
+            if Utils.element_exists(tree_row, "menu-tree-collapsed-folder-icon"):
+                menu_item.click()
+                time.sleep(1)
+                expanded += 1
+
+            elif Utils.element_exists(tree_row, "menu-tree-expanded-folder-icon"):
+                expanded += 1
+        except NoSuchElementException:
+            pass
+
+        return expanded
+
+    @staticmethod
+    def element_exists(web_element, class_name):
+        try:
+            if web_element.find_element(By.CLASS_NAME, class_name):
+                return True
+        except NoSuchElementException as e:
+            return False
 
 
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException

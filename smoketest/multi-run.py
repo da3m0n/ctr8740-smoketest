@@ -26,12 +26,11 @@ def ensure_path_exists(path):
 
 
 logs_dir = os.path.join(Utils.log_dir(), 'logs')
-try:
-    sub_path = requests.get('http://localhost:3000/next').content
-    path_to_dir = os.path.join(os.getcwd(), 'logs', *sub_path.split('/'))
-    ensure_path_exists(path_to_dir)
-except ConnectionError:
-    print "Need to start webserver. Run ./startup.sh from ", os.getcwd()
+sub_path = requests.get('http://localhost:3000/next').content
+path_to_dir = os.path.join(os.getcwd(), 'logs', *sub_path.split('/'))
+ensure_path_exists(path_to_dir)
+# except ConnectionError:
+#     print "Need to start webserver. Run ./startup.sh from smoketest dir", os.getcwd()
 
 
 def signal_handler(sig, frame):
@@ -79,7 +78,9 @@ else:
 run_dates_file.close()
 
 for i in range(1, len(sys.argv)):
-    field = ET.SubElement(root, "ipAddress").text = sys.argv[i]
+    # path = os.path.join(path_to_dir, Utils.format_ip_address(sys.argv[i]))
+    path = os.path.normcase(os.path.join("logs", sub_path, Utils.format_ip_address(sys.argv[i])))
+    field = ET.SubElement(root, "ipAddress", location=path).text = sys.argv[i]
 
 tree = ET.ElementTree(root)
 tree.write(os.path.join(path_to_dir, 'ip-addresses.xml'))

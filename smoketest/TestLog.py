@@ -28,7 +28,7 @@ class TestLog(object):
         self.all_tests_start = time.strftime('%d %B %Y %H:%M:%S', self.time)
         self.url_friendly_start = time.strftime('%d_%B_%Y', self.time)
         self.dir = dir
-        self.ipAddress = sys.argv[1]
+        self.ipAddress = Utils.format_ip_address(sys.argv[1])
 
         path = os.path.join(GlobalFuncs.path())
 
@@ -93,7 +93,7 @@ class TestLog(object):
 
         tree = ET.ElementTree(self.root)
 
-        tests = os.path.join(GlobalFuncs.path(), Utils.format_ip_address(self.ipAddress))
+        tests = os.path.join(GlobalFuncs.path(), self.ipAddress)
 
         if not os.path.exists(tests):
             os.mkdir(tests)

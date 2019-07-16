@@ -62,10 +62,11 @@ let utils = (function () {
             xmlDoc = xml.response,
             addressTags = xmlDoc.getElementsByTagName('ipAddress'),
             ipAddresses = [];
-        if(addressTags)
-
-        for (let i = 0; i < addressTags.length; i++) {
-            ipAddresses.push(addressTags[i].innerHTML);
+        if(addressTags) {
+            for (let i = 0; i < addressTags.length; i++) {
+                ipAddresses.push({ipAddress: addressTags[i].innerHTML,
+                                  location: addressTags[i].attributes.location.value});
+            }
         }
 
         return ipAddresses;
@@ -172,8 +173,8 @@ let utils = (function () {
         let summary = {};
 
         ipAddresses.forEach(function (ip) {
+            let testResult = loadXMLDoc('/smoketest/' + ip.location +'/' + 'testresult.xml');
 
-            let testResult = loadXMLDoc('/smoketest/logs/' + date + '/' + run + '/' + ip + '/' + 'testresult.xml');
             let testResultXml = testResult.response;
             if (!testResultXml.getElementsByTagName) {
                 return;
@@ -219,7 +220,7 @@ let utils = (function () {
 
 
         ipAddresses.forEach(function (ip, cnt) {
-            let testResultXML = loadXMLDoc('/smoketest/logs/' + date + '/' + run + '/' + ip + '/' + 'testresult.xml');
+            let testResultXML = loadXMLDoc('/smoketest/' + ip.location + '/' + 'testresult.xml');
             let testResultXmlResp = testResultXML.response;
             if (!testResultXmlResp.getElementsByTagName) {
                 return;
@@ -230,7 +231,7 @@ let utils = (function () {
             let testResult = perIpResults[cnt];
             let ipAndResDiv = document.createElement('div');
             let ipAddressText = document.createElement('p');
-            ipAddressText.innerHTML = ip;
+            ipAddressText.innerHTML = ip.ipAddress;
 
             let ipAddressDiv = document.createElement('div');
             ipAddressDiv.setAttribute('class', 'ipAddressDiv');

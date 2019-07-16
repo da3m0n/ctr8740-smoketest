@@ -17,6 +17,7 @@ from smoketest.SmokeTest import SmokeTest
 from optparse import OptionParser
 
 
+# to run on multiple radios add the addresses separated by a space
 def main():
     parser = OptionParser(usage="usage: %prog ipAddress browser logFileLocation")
     # parser.add_option("-c", "--chelp", help="Add arguments for IP Address for radio and target browser")
@@ -126,27 +127,20 @@ class RunAll:
             self.test_log.close()
             raise e
 
-        # if you want to run individual tests
-        # change smoke_test.create to take the parameters as a list
-
-        # tests = RunAll.get_screens(self.driver)
-
-        # smoke_test.create("Status/Equipment")
+        # if you want to run individual tests follow format below
+        # smoke_test.create(["Status", "Equipment"])
         # smoke_test.create(["Status", "Alarms"])
-        # smoke_test.create("Status/System Log")
-        # smoke_test.create(["Status"]["Manufacturing Details"])
-        # smoke_test.create("Status/ERPS")
-        # smoke_test.create("Switching and Routing/Quality of Service/Classifiers")
-
-        # smoke_test.create(["System Configuration","Admin","Users"])
-        # smoke_test.create("Status/Manufacture Details")
-        # smoke_test.create("Radio Configuration/Radio Links")
-        # smoke_test.create("Switching & Routing Configuration/Port Manager")
-        # smoke_test.create("Switching & Routing Configuration/Interfaces")
+        # smoke_test.create(["Status", "System Log"])
+        # smoke_test.create(["System Configuration", "DNS"])
+        # smoke_test.create(["System Configuration", "SNMP"])
+        # smoke_test.create(["Admin", "User Management", "Local"])
+        # smoke_test.create(["Switching and Routing", "Interfaces"])
+        # # smoke_test.create(["Switching and Routing", "Routing", "Static Routing"])
+        # smoke_test.create(["Switching and Routing", "Quality of Service", "Encoding/Decoding", "PCP"])
 
         # OR
         
-        # if you want to run over all the screens, uncomment below
+        # if you want to run over all the screens, remove the empty array and uncomment rest
         tests = RunAll.get_screens(self.driver)
 
         for test in tests:

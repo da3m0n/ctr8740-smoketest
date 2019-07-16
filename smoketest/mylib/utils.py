@@ -62,7 +62,7 @@ class Utils(object):
         self.pwd = os.getcwd()
         self.local_time = time.localtime()
         self.date = time.strftime('%d_%B_%Y', self.local_time)
-        self.ipAddress = sys.argv[1]
+        self.ipAddress = Utils.format_ip_address(sys.argv[1])
 
     @staticmethod
     def create_driver(driver_name):
@@ -271,7 +271,7 @@ class Utils(object):
 
     @staticmethod
     def format_ip_address(ip_address):
-        return ip_address.replace(":", " Port ")
+        return ip_address.replace(":", "_port_")
 
     def save_screenshot(self, test_name, test_type):
         # test_name = test_name.rstrip('.')
@@ -297,7 +297,7 @@ class Utils(object):
     @staticmethod
     def delete_existing_dir():
         import sys
-        ipAddress = sys.argv[1]
+        ipAddress = Utils.format_ip_address(sys.argv[1])
 
         date = time.strftime('%d_%B_%Y', time.localtime())
 

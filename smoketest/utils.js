@@ -4,6 +4,42 @@ let utils = (function () {
         return loadDoc(filename, "document")
     }
 
+    function asyncInOrder (list, func, done) {
+        let todo = [];
+        let todoMap = {};
+        done = done || function () {};
+
+        for (let i = 0; i < list.length; i++) {
+            let item = {idx: i, caller: null, args: null};
+            todoMap[i] = item;
+            todo.push(item);
+        }
+
+        if (list.length === 0) {
+            done();
+        }
+        list.forEach(function (item, idx) {
+            let mkDelayedCallback = function (myCb) {
+                return function () {
+                    if (todo.length > 0) {
+                        todoMap[idx].args = arguments;
+                        todoMap[idx].caller = this;
+                        while (todo.length > 0 && todo[0].args !== null) {
+                            let curCb = todo.shift();
+                            myCb.apply(curCb.caller, curCb.args);
+                        }
+                        if (todo.length === 0) {
+                            done();
+                        }
+                    }
+                }
+
+            };
+            func(item, mkDelayedCallback, idx);
+
+        })
+    }
+
     function loadDoc(filename, type) {
         let xhttp;
 
@@ -31,6 +67,39 @@ let utils = (function () {
             status: xhttp.status
         };
     }
+    function loadXMLDocAsync(filename, cb) {
+        loadDocAsync(filename, "document", cb);
+    }
+
+    function loadDocAsync(filename, type, cb) {
+        let xhttp;
+        if (window.ActiveXObject) {
+            xhttp = new ActiveXObject("Msxml2.XMLHTTP");
+        }
+        else {
+            xhttp = new XMLHttpRequest();
+        }
+
+        try {
+            xhttp.open("GET", filename, true);
+            xhttp.onreadystatechange = function () {
+                if(xhttp.readyState === 4) {
+                    cb ({
+                        response: xhttp.responseXML ? xhttp.responseXML : xhttp.responseText,
+                        responseType: xhttp.responseType,
+                        status: xhttp.status
+                    });
+                }
+            }
+            if (type) {
+                xhttp.responseType = type;
+             }
+        } catch (err) {
+            // console.log('error');
+        }
+
+        xhttp.send("");
+    }
 
     function getResult(filename) {
         let xml = loadXMLDoc(filename);
@@ -57,19 +126,21 @@ let utils = (function () {
 
     }
 
-    function getIpAddresses(file) {
-        let xml = loadXMLDoc(file),
-            xmlDoc = xml.response,
-            addressTags = xmlDoc.getElementsByTagName('ipAddress'),
-            ipAddresses = [];
-        if(addressTags) {
-            for (let i = 0; i < addressTags.length; i++) {
-                ipAddresses.push({ipAddress: addressTags[i].innerHTML,
-                                  location: addressTags[i].attributes.location.value});
+    function getIpAddresses(file, cb) {
+        loadXMLDocAsync(file, function (xml) {
+            let xmlDoc = xml.response;
+            let addressTags = xmlDoc.getElementsByTagName('ipAddress');
+            let ipAddresses = [];
+            if(addressTags) {
+                for (let i = 0; i < addressTags.length; i++) {
+                    ipAddresses.push({ipAddress: addressTags[i].innerHTML,
+                                      location: addressTags[i].attributes.location.value});
+                }
             }
-        }
 
-        return ipAddresses;
+            cb(ipAddresses);
+
+        });
     }
 
     let getXMLTagValue = (file, tag) => {
@@ -156,132 +227,136 @@ let utils = (function () {
     }
 
 
-    function makeListElem(ulEle, run, date) {
-        let ipAddresses = getIpAddresses('/smoketest/logs/' + date + '/' + run + '/' + 'ip-addresses.xml');
+    function makeListElem(ulEle, run, date, cb) {
+        getIpAddresses('/smoketest/logs/' + date + '/' + run + '/' + 'ip-addresses.xml', function (ipAddresses) {
+            let individualRes = {};
+            let perIpResults = [];
 
-        let individualRes = {};
-        let perIpResults = [];
+            let runNumberContainer = document.createElement('div');
+            runNumberContainer.setAttribute('class', 'runNumberContainer');
 
-        let runNumberContainer = document.createElement('div');
-        runNumberContainer.setAttribute('class', 'runNumberContainer');
+            let runNumDiv = document.createElement('div');
+            runNumDiv.setAttribute('class', 'runNumDiv');
 
-        let runNumDiv = document.createElement('div');
-        runNumDiv.setAttribute('class', 'runNumDiv');
+            let totalErrors = 0;
+            let totalTests = 0;
+            let summary = {};
+            let testResults = [];
 
-        let totalErrors = 0;
-        let totalTests = 0;
-        let summary = {};
+            asyncInOrder(ipAddresses, function (ip, makeCallback, idx) {
+                loadXMLDocAsync('/smoketest/' + ip.location +'/' + 'testresult.xml', makeCallback(function (testResult) {
+                    let testResultXml = testResult.response;
+                    if (!testResultXml.getElementsByTagName || testResult.status !== 200) {
+                        return;
+                    }
+                    testResults.push({res: testResultXml, ip: ip, idx: idx});
+                    let errorCountEle = testResultXml.getElementsByTagName('errorCount');
+                    let totalErrorCountEle = testResultXml.getElementsByTagName('totalTestCount');
 
-        ipAddresses.forEach(function (ip) {
-            let testResult = loadXMLDoc('/smoketest/' + ip.location +'/' + 'testresult.xml');
+                    let testCount = parseInt(totalErrorCountEle[0].getAttribute('totalTestCount'));
+                    let errorCount = parseInt(errorCountEle[0].getAttribute('errorCount'));
 
-            let testResultXml = testResult.response;
-            if (!testResultXml.getElementsByTagName) {
-                return;
-            }
-            let errorCountEle = testResultXml.getElementsByTagName('errorCount');
-            let totalErrorCountEle = testResultXml.getElementsByTagName('totalTestCount');
+                    individualRes = {totalErrorCount: errorCount, totalTestCount: testCount};
+                    perIpResults.push({ip, totalErrorCount: errorCount, totalTestCount: testCount});
 
-            let testCount = parseInt(totalErrorCountEle[0].getAttribute('totalTestCount'));
-            let errorCount = parseInt(errorCountEle[0].getAttribute('errorCount'));
+                    totalErrors += errorCount;
+                    totalTests += testCount;
+                    summary = {errors: totalErrors, runs: totalTests};
 
-            individualRes = {totalErrorCount: errorCount, totalTestCount: testCount};
-            perIpResults.push({ip, totalErrorCount: errorCount, totalTestCount: testCount});
+                }));
 
-            totalErrors += errorCount;
-            totalTests += testCount;
-            summary = {errors: totalErrors, runs: totalTests};
-        });
-
-        if (Object.keys(individualRes).length === 0) {
-            return null;
-        }
-
-        let testResultDiv = document.createElement('div');
-        testResultDiv.setAttribute('class', 'testResultDiv');
-        testResultDiv.innerHTML = summary.runs - summary.errors + ' / ' + summary.runs;
-        testResultDiv.setAttribute('class', summary.errors > 0 ? 'test-fail' : 'test-pass');
-
-        let runNumEle = document.createElement('p');
-        let result = document.createElement('p');
-
-        runNumEle.innerHTML = run;
-        // result.innerHTML = individualRes.totalTestCount - individualRes.totalErrorCount + '/' + individualRes.totalTestCount;
-
-        let resContainer = document.createElement('div');
-        resContainer.setAttribute('class', 'resContainer');
-
-        runNumDiv.appendChild(runNumEle);
-        testResultDiv.appendChild(result);
-
-        resContainer.appendChild(runNumDiv);
-        resContainer.appendChild(testResultDiv);
-        runNumberContainer.appendChild(resContainer);
-
-
-        ipAddresses.forEach(function (ip, cnt) {
-            let testResultXML = loadXMLDoc('/smoketest/' + ip.location + '/' + 'testresult.xml');
-            let testResultXmlResp = testResultXML.response;
-            if (!testResultXmlResp.getElementsByTagName) {
-                return;
-            }
-
-            let screenshots = [];
-            screenshots.push(testResultXmlResp.getElementsByTagName('screenshot'));
-            let testResult = perIpResults[cnt];
-            let ipAndResDiv = document.createElement('div');
-            let ipAddressText = document.createElement('p');
-            ipAddressText.innerHTML = ip.ipAddress;
-
-            let ipAddressDiv = document.createElement('div');
-            ipAddressDiv.setAttribute('class', 'ipAddressDiv');
-            ipAddressDiv.appendChild(ipAddressText);
-
-            let perIpResultDiv = document.createElement('div');
-            perIpResultDiv.setAttribute('class', 'perIpResultDiv');
-            perIpResultDiv.setAttribute('class',  testResult.totalErrorCount > 0 ? 'test-fail' : 'test-pass');
-            perIpResultDiv.innerHTML = testResult.totalTestCount - testResult.totalErrorCount + ' / ' +testResult.totalTestCount
-
-            ipAndResDiv.setAttribute('class', 'ipAndResDiv');
-            ipAndResDiv.appendChild(ipAddressDiv);
-            ipAndResDiv.appendChild(perIpResultDiv);
-            runNumberContainer.appendChild(ipAndResDiv);
-
-            if(testResult.totalErrorCount > 0) {
-                if (screenshots.length > 0) {
-                    let cnt = 0;
-                    screenshots.forEach(function (ipScreenShots) {
-                        for (let ss = 0; ss < ipScreenShots.length; ss++) {
-                            let screenshotPath = ipScreenShots[ss].getAttribute('path');
-
-                            let screenshotDiv = document.createElement('div');
-                            let screenshotLink = document.createElement('a');
-                            screenshotLink.setAttribute('data-lightbox', screenshotPath.split('/').pop());
-
-                            screenshotLink.setAttribute('href', screenshotPath);
-                            screenshotLink.innerHTML = screenshotPath;
-
-                            screenshotDiv.setAttribute('class', 'screenshotDiv');
-                            screenshotDiv.appendChild(screenshotLink);
-                            runNumberContainer.appendChild(screenshotDiv);
-                            cnt++;
-
-                        }
-                    });
+            }, function () {
+                if (Object.keys(individualRes).length === 0) {
+                    cb(null);
+                    return;
                 }
+                let testResultDiv = document.createElement('div');
+                testResultDiv.setAttribute('class', 'testResultDiv');
+                testResultDiv.innerHTML = summary.runs - summary.errors + ' / ' + summary.runs;
+                testResultDiv.setAttribute('class', summary.errors > 0 ? 'test-fail' : 'test-pass');
 
-            }
+                let runNumEle = document.createElement('p');
+                let result = document.createElement('p');
 
+                runNumEle.innerHTML = run;
+                // result.innerHTML = individualRes.totalTestCount - individualRes.totalErrorCount + '/' + individualRes.totalTestCount;
+
+                let resContainer = document.createElement('div');
+                resContainer.setAttribute('class', 'resContainer');
+
+                runNumDiv.appendChild(runNumEle);
+                testResultDiv.appendChild(result);
+
+                resContainer.appendChild(runNumDiv);
+                resContainer.appendChild(testResultDiv);
+                runNumberContainer.appendChild(resContainer);
+
+
+                testResults.forEach(function (data) {
+                    let ip = data.ip;
+                    let testResultXmlResp = data.res;
+                    let cnt = data.idx;
+
+                    let screenshots = [];
+                    screenshots.push(testResultXmlResp.getElementsByTagName('screenshot'));
+                    let testResult = perIpResults[cnt];
+                    let ipAndResDiv = document.createElement('div');
+                    let ipAddressText = document.createElement('p');
+                    ipAddressText.innerHTML = ip.ipAddress;
+
+                    let ipAddressDiv = document.createElement('div');
+                    ipAddressDiv.setAttribute('class', 'ipAddressDiv');
+                    ipAddressDiv.appendChild(ipAddressText);
+
+                    let perIpResultDiv = document.createElement('div');
+                    perIpResultDiv.setAttribute('class', 'perIpResultDiv');
+                    perIpResultDiv.setAttribute('class',  testResult.totalErrorCount > 0 ? 'test-fail' : 'test-pass');
+                    perIpResultDiv.innerHTML = testResult.totalTestCount - testResult.totalErrorCount + ' / ' +testResult.totalTestCount
+
+                    ipAndResDiv.setAttribute('class', 'ipAndResDiv');
+                    ipAndResDiv.appendChild(ipAddressDiv);
+                    ipAndResDiv.appendChild(perIpResultDiv);
+                    runNumberContainer.appendChild(ipAndResDiv);
+
+                    if(testResult.totalErrorCount > 0) {
+                        if (screenshots.length > 0) {
+                            let cnt = 0;
+                            screenshots.forEach(function (ipScreenShots) {
+                                for (let ss = 0; ss < ipScreenShots.length; ss++) {
+                                    let screenshotPath = ipScreenShots[ss].getAttribute('path');
+
+                                    let screenshotDiv = document.createElement('div');
+                                    let screenshotLink = document.createElement('a');
+                                    screenshotLink.setAttribute('data-lightbox', screenshotPath.split('/').pop());
+
+                                    screenshotLink.setAttribute('href', screenshotPath);
+                                    screenshotLink.innerHTML = ipScreenShots[ss].parentNode.attributes.testScreen.value;
+
+
+                                    screenshotDiv.setAttribute('class', 'screenshotDiv');
+                                    screenshotDiv.appendChild(screenshotLink);
+                                    runNumberContainer.appendChild(screenshotDiv);
+                                    cnt++;
+
+                                }
+                            });
+                        }
+
+                    }
+                });
+                if(totalErrors > 0) {
+                    runNumberContainer.classList.add('smokeTestFail');
+                    runNumberContainer.classList.remove('smokeTestPass');
+                } else {
+                    runNumberContainer.classList.add('smokeTestPass');
+                    runNumberContainer.classList.remove('smokeTestFail');
+                }
+                cb(runNumberContainer);
+            });
         });
-            if(totalErrors > 0) {
-                runNumberContainer.classList.add('smokeTestFail');
-                runNumberContainer.classList.remove('smokeTestPass');
-            } else {
-                runNumberContainer.classList.add('smokeTestPass');
-                runNumberContainer.classList.remove('smokeTestFail');
-            }
 
-        return runNumberContainer;
+
+
     }
 
     function loadAndDisplayPage(allTests, testRunInfo) {
@@ -366,11 +441,13 @@ let utils = (function () {
 
             let ulEle = document.createElement('div');
 
-            obj.runs.forEach(function(run) {
-                var res = makeListElem(ulEle, run, obj.date);
-                if (res) {
-                    panelBodyEle.appendChild(res);
-                }
+            asyncInOrder(obj.runs, function(run, makeCallback) {
+                makeListElem(ulEle, run, obj.date, makeCallback(function (res) {
+                    if (res) {
+                        panelBodyEle.appendChild(res);
+                    }
+
+                }));
             });
 
             // panelBodyEle.appendChild(ulEle);
@@ -421,7 +498,6 @@ let utils = (function () {
         getResult: getResult,
         loadNewResults:loadNewResults,
         loadAndDisplayPage: loadAndDisplayPage,
-        getIpAddresses: getIpAddresses,
         getTestRunInfo: getTestRunInfo,
         loadDoc: loadDoc
     };

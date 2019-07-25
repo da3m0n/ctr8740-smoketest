@@ -181,7 +181,7 @@ body {
 }
 
 .resultHeaderDiv {
-    margin-left: 40px;
+    margin-left: 145px;
 }
 
 .resContainer {
@@ -190,7 +190,15 @@ body {
 }
 
 .screenshotDiv {
-    padding-left: 125px;
+    padding-left: 180px;
+}
+
+.screenshotDiv a {
+    text-decoration: none;
+}
+
+.screenshotDiv a:hover {
+    border-bottom: 1px solid #0056b3;
 }
 
 .ipAddressDiv {
@@ -211,4 +219,8 @@ body {
 .panel-title a:hover {
     text-decoration: none;
     border-bottom: 2px solid #0056b3;
+}
+
+.panel-collapse {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
 }

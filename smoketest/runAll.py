@@ -110,7 +110,7 @@ class RunAll:
         # utils = Utils(driver, self.test_log)
         self.utils.delete_existing_dir()
 
-        self.test_log.start('login')
+        # self.test_log.start('login')
         test_helper = TestHelper(self.test_log, self.driver, self.test_type, self.utils)
         login_handler = LoginHandler(self.driver, test_helper, self.test_log)
         login_handler.start()
@@ -131,11 +131,12 @@ class RunAll:
         # smoke_test.create(["Status", "Equipment"])
         # smoke_test.create(["Status", "Alarms"])
         # smoke_test.create(["Status", "System Log"])
-        # smoke_test.create(["System Configuration", "DNS"])
+        # smoke_test.create(["System Configuration", "Management IP"])
+        # smoke_test.create(["Admin", "Advanced"])
         # smoke_test.create(["System Configuration", "SNMP"])
+        # smoke_test.create(["System Configuration", "DNS"])
         # smoke_test.create(["Admin", "User Management", "Local"])
         # smoke_test.create(["Switching and Routing", "Interfaces"])
-        # # smoke_test.create(["Switching and Routing", "Routing", "Static Routing"])
         # smoke_test.create(["Switching and Routing", "Quality of Service", "Encoding/Decoding", "PCP"])
 
         # OR

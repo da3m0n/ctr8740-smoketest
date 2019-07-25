@@ -1,4 +1,4 @@
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -20,26 +20,26 @@ class SmokeTest:
             self.gui_lib.navigate_to_screen(screen_name)
             self.gui_lib.is_alert_present(self.driver)
 
-            time.sleep(3)
-            # self.driver.execute_script("document.getElementById('tableWidget1_3_mapping').innerHTML=\"\";")
+            WebDriverWait(self.driver, 45).until(EC.visibility_of_element_located((By.ID, "contentInner")))
 
-            WebDriverWait(self.driver, 45).until(EC.invisibility_of_element_located((By.ID, "loading")))
+            content_inner = self.driver.find_element(By.ID, "contentInner")
+            error_elements = content_inner.find_elements(By.CLASS_NAME, "error")
+            name = "/".join(screen_name)
 
-            warning_elements = self.driver.find_elements_by_class_name('warning')
-
-            for el in warning_elements:
-                display_prop = el.value_of_css_property('display')
-
-                page_name = screen_name.split('/').pop().replace(' ', '_')
-
-                if display_prop == u'block':
-                    self.test_helper.assert_true(True,
-                                                 page_name + ' page not loaded OK',
-                                                 page_name)
-                else:
-                    self.test_helper.assert_true(False,
-                                                 'Ensure page is displayed.',
-                                                 page_name + ' page loaded OK')
+            if not error_elements:
+                child_elements = content_inner.find_elements(By.XPATH, "div[starts-with(@class, "
+                                                                       "'widget_')]")
+                for child in child_elements:
+                    try:
+                        child.find_element(By.XPATH, "*")
+                    except NoSuchElementException:
+                        self.test_helper.assert_true(True,
+                                                     name + ' page not loaded OK',
+                                                     name)
+            else:
+                self.test_helper.assert_true(True,
+                                             name + ' page not loaded OK',
+                                             name)
 
         except StaleElementReferenceException as e:
             print('StaleElementException', e)

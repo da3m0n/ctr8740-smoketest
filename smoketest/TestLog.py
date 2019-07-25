@@ -11,7 +11,7 @@ from xml.etree.ElementTree import Comment
 
 class TestLog(object):
     overall_errors = 0
-    num_tests_run = 0
+    # num_tests_run = 0
     name = ''
     test_errors = 0
     num_screens = 0
@@ -23,7 +23,7 @@ class TestLog(object):
         self.doc = None
         self.root = ET.Element("tests")
         self.root.append(Comment('Auto Generated in TestLog.py'))
-
+        self.num_tests_run = 0
         self.time = time.localtime()
         self.all_tests_start = time.strftime('%d %B %Y %H:%M:%S', self.time)
         self.url_friendly_start = time.strftime('%d_%B_%Y', self.time)

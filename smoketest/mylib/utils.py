@@ -271,7 +271,9 @@ class Utils(object):
 
     @staticmethod
     def format_ip_address(ip_address):
-        return ip_address.replace(":", "_port_")
+        import re
+        return re.sub(r'\*|\<|\>|\%|:|\?|\||\\', "_", ip_address)
+        # return ip_address.replace(":", "_port_")
 
     def save_screenshot(self, test_name, test_type):
         # test_name = test_name.rstrip('.')
@@ -312,7 +314,9 @@ class Utils(object):
         # breadcrumbs = screen_name.split('/')
         res = self.__navigate_to_location(screen_name)
         # self.driver.switch_to_frame('frame_content')
-        self.test_log.start(screen_name[-1])
+
+        # self.test_log.start(screen_name[-1])
+        self.test_log.start('/'.join(screen_name))
         return res
 
     def __navigate_to_location(self, breadcrumbs):

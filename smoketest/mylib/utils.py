@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException, NoAlertPresentExc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
-import urllib, urllib2
+#import urllib, urllib2
 
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Comment
@@ -26,7 +26,6 @@ class GlobalFuncs(object):
     def rel_path():
         global path_to_dir
         sep = path_to_dir.split(os.sep)
-        print('rel_path', sep)
         url_path = urllib.pathname2url(path_to_dir)
         url_path = url_path.partition('ctrguiautotest')
 
@@ -65,19 +64,31 @@ class Utils(object):
         self.ipAddress = Utils.format_ip_address(sys.argv[1])
 
     @staticmethod
+    def win_chrome():
+        path_to_chrome_driver = os.path.abspath(os.path.join(os.getcwd(), os.pardir, "drivers", "chromedriver.exe"))
+        return webdriver.Chrome(path_to_chrome_driver)
+    
+    @staticmethod
+    def linux_chrome():
+        path_to_chrome_driver = '/usr/local/bin/chromedriver'
+        return webdriver.Chrome(path_to_chrome_driver)
+    
+    @staticmethod
     def create_driver(driver_name):
-        if driver_name == "chrome":
-            path_to_chrome_driver = os.path.abspath(os.path.join(os.getcwd(), os.pardir, "drivers", "chromedriver.exe"))
-            return webdriver.Chrome(path_to_chrome_driver)
-        elif driver_name == "firefox":
-            return webdriver.Firefox()
-        elif driver_name == "edge":
-            return webdriver.Edge()
-        elif driver_name == "ie":
-            return webdriver.Ie()
-        else:
-            raise Exception("Unknown driver " + driver_name)
-
+        possible_drivers = {
+            'chrome' : [Utils.win_chrome, Utils.linux_chrome],
+            'firefox' : [webdriver.Firefox],
+        }
+        drivers = possible_drivers[driver_name]
+        for driver in drivers:
+            try:
+                return driver()
+            except Exception as e:
+                print('exception', e)
+                pass
+        
+        raise Exception("Unable to create Driver " + driver_name)
+        
     def start_browser(self, driver):
         self.get_address(driver)
         self.window_init(driver)
@@ -143,7 +154,7 @@ class Utils(object):
         # handle = driver.window_handles
 
     @classmethod
-    def get_address(self, driver):
+    def get_addressORIG(self, driver):
         if len(sys.argv) < 2:
             print("Address argument missing")
             sys.exit()
@@ -155,6 +166,14 @@ class Utils(object):
             address = "https://" + sys.argv[1]
         # get page
         driver.get(address)
+
+    @classmethod
+    def get_address(self, driver):
+        if len(sys.argv) < 2:
+            print("Address argument missing")
+            sys.exit()
+        print('arg', sys.argv[1])
+        driver.get("http://" + sys.argv[1])
 
     def click_element(self, element):
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.ID, element)))
@@ -222,7 +241,7 @@ class Utils(object):
                     # screem_shot_tag.set('screenshotDir', os.path.join())
 
             else:
-                print 'no screenshots', ip_address
+                print('no screenshots', ip_address)
 
             # output_file.write(os.path.join(results_dir, ip_address, 'results.xml'))
 
@@ -321,7 +340,7 @@ class Utils(object):
 
     def __navigate_to_location(self, breadcrumbs):
         self.driver.switch_to_default_content()
-        return self.__navigate_to_location_rec(self.driver.find_element(By.CLASS_NAME,'widget_ctr.widgets.Menu'), breadcrumbs, 0)
+        return self.__navigate_to_location_rec(self.driver.find_element(By.CLASS_NAME,'menu-tree-root'), breadcrumbs, 0)
 
     def __navigate_to_location_rec(self, root, breadcrumbs, pos):
         breadcrumb = breadcrumbs[pos]
@@ -337,7 +356,8 @@ class Utils(object):
             # we find the top level otem and alwaysnscroll up to it
             from selenium.webdriver.common.action_chains import ActionChains
             base = root.find_element_by_xpath("//div[@aria-level='0']")
-            ActionChains(self.driver).move_to_element(base).perform()
+            first = base.find_element_by_xpath(".//span[@class='menu-tree-item-label']//a[@class='menu-entity']")
+            ActionChains(self.driver).move_to_element(first).perform()
 
             if not last_el.get_attribute('href') is None:
                 last_el.click()

@@ -56,7 +56,7 @@ class RunAll:
     def do_expand(driver, level):
         expanded = False
         list = []
-        root = driver.find_element(By.CLASS_NAME,'widget_ctr.widgets.Menu');
+        root = driver.find_element(By.CLASS_NAME,'menu-tree-root');
         menu_items_by_level = root.find_elements_by_xpath(".//div[@aria-level='" + str(level) + "']")
         # menu_items_by_level = driver.find_elements_by_xpath("//a[@href='undefined']")
 
@@ -88,7 +88,7 @@ class RunAll:
                                                                  "selected']").text)
                         count += 1
                     except:
-                        print "not found", cur
+                        print("not found", cur)
 
                 cur = cur.find_element(By.XPATH, "..")
         except NoSuchElementException:
@@ -128,9 +128,9 @@ class RunAll:
             raise e
 
         # if you want to run individual tests follow format below
-        # smoke_test.create(["Status", "Equipment"])
         # smoke_test.create(["Status", "Alarms"])
         # smoke_test.create(["Status", "System Log"])
+        # smoke_test.create(["Status", "Equipment"])
         # smoke_test.create(["System Configuration", "Management IP"])
         # smoke_test.create(["Admin", "Advanced"])
         # smoke_test.create(["System Configuration", "SNMP"])
@@ -143,7 +143,8 @@ class RunAll:
         
         # if you want to run over all the screens, remove the empty array and uncomment rest
         tests = RunAll.get_screens(self.driver)
-
+        # test = []
+        
         for test in tests:
             try:
                 if not smoke_test.create(test):
@@ -160,7 +161,7 @@ if __name__ == "__main__":
 
     count = 0
     # while 1:
-    for x in xrange(1):
+    for x in range(1):
         # time.sleep(5)
         # main()
         try:

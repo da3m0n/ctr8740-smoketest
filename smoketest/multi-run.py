@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import subprocess
 import sys
 import signal
@@ -27,7 +28,7 @@ def ensure_path_exists(path):
 
 
 logs_dir = os.path.join(Utils.log_dir(), 'logs')
-sub_path = requests.get('http://localhost:3000/next').content
+sub_path = requests.get('http://localhost:3000/next').content.decode('utf-8');
 path_to_dir = os.path.join(os.getcwd(), 'logs', *sub_path.split('/'))
 ensure_path_exists(path_to_dir)
 # except ConnectionError:
@@ -54,6 +55,8 @@ def run_some(start, end):
 
     if platform == "win32":
         path_to_python = "c:\\Python27\\python.exe"
+    elif platform == "linux":
+        path_to_python = sys.executable
     else:
         path_to_python = "/cygdrive/c/cygwin64/bin/python"
     for i in range(start, end):
@@ -69,7 +72,7 @@ if not os.path.exists(run_dates_path):
 
     for date in Utils.get_dirs(logs_dir):
         for run in Utils.get_dirs(os.path.join(Utils.log_dir(), 'logs', date)):
-            print 'date', date, 'list', os.listdir(os.path.join(Utils.log_dir(), 'logs', date))
+            print('date', date, 'list', os.listdir(os.path.join(Utils.log_dir(), 'logs', date)))
             run_dates_file.write(date + '/' + run + '\n')
 
 else:

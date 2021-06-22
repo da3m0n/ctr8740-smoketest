@@ -1,4 +1,4 @@
-# wtm4k-smoketest
+# smoketest
 
 The purpose of this is to just go to specific pages, or all the CTR pages and if any fail to load an error and screenshot will be captured.
 

@@ -14,6 +14,7 @@ class TestHelper(object):
     def assert_true(self, val, msg=None, test_name=None):
         # todo change logic so it makes sense
         if val:
+            print('val ****', val, test_name, msg)
             self.error_count += 1
             # utils = Utils(self.driver, None)
             self.utils.save_screenshot(test_name, self.test_type)

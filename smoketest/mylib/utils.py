@@ -75,19 +75,39 @@ class Utils(object):
     
     @staticmethod
     def create_driver(driver_name):
-        possible_drivers = {
-            'chrome' : [Utils.win_chrome, Utils.linux_chrome],
-            'firefox' : [webdriver.Firefox],
-        }
-        drivers = possible_drivers[driver_name]
-        for driver in drivers:
-            try:
-                return driver()
-            except Exception as e:
-                print('exception', e)
-                pass
+        from selenium import webdriver
         
-        raise Exception("Unable to create Driver " + driver_name)
+        if(driver_name == "firefox"):
+            from webdriver_manager.firefox import GeckoDriverManager
+                     
+#            profile = webdriver.FirefoxProfile()
+#            profile.accept_untrusted_certs = True
+
+            driver = webdriver.Firefox(executable_path=GeckoDriverManager().install()) 
+#            driver = webdriver.Firefox(firefox_profile=profile)
+            
+        elif (driver_name == "chrome"):
+            from webdriver_manager.chrome import ChromeDriverManager
+            options = webdriver.ChromeOptions()
+            options.add_argument('ignore-certificate-errors')
+            driver = webdriver.Chrome(chrome_options=options)
+            
+        elif (driver_name == "chromium"):
+            from webdriver_manager.chrome import ChromeDriverManager
+            from webdriver_manager.utils import ChromeType
+            from subprocess import Popen, PIPE
+
+            p = Popen(['bash', 'which', 'chromium-browser'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            output, err = p.communicate(b"")
+            
+            options = webdriver.ChromeOptions()
+            options.add_argument('ignore-certificate-errors')
+            options.binary_location = output.decode("utf-8").strip()
+            
+            driver = webdriver.Chrome(chrome_options=options)
+   
+        return driver
+       #raise Exception("Unable to create Driver " + driver_name)
         
     def start_browser(self, driver):
         self.get_address(driver)
@@ -97,13 +117,10 @@ class Utils(object):
     def login(self, driver, username, password, test_helper, test_log):
 
         try:
-            # find the login element and type in the username
             inputElement = driver.find_element_by_id("username")
             inputElement.send_keys(username)
-            # find the password element and type in the password
             inputElement = driver.find_element_by_id("password")
             inputElement.send_keys(password)
-            # submit the form
             inputElement.submit()
         except Exception as e:
             print('login failed')
@@ -164,6 +181,7 @@ class Utils(object):
             response.close()
         except:
             address = "https://" + sys.argv[1]
+
         # get page
         driver.get(address)
 
@@ -173,7 +191,7 @@ class Utils(object):
             print("Address argument missing")
             sys.exit()
         print('arg', sys.argv[1])
-        driver.get("http://" + sys.argv[1])
+        driver.get("https://" + sys.argv[1])
 
     def click_element(self, element):
         WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located((By.ID, element)))

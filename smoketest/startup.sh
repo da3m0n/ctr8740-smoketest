@@ -16,7 +16,8 @@ if command -v lsof ; then
 	kill $i
     done
     
-    python -m SimpleHTTPServer 8000&
+    #    python -m SimpleHTTPServer 8000&
+    python3 -m http.server 8000&
 	
 else
     for i in `netstat -aon  | gawk ' $2~/:3000/ {gsub("\r","",$5); print $5}'` ; do
@@ -30,7 +31,7 @@ else
 	taskkill /F /PID $i
     done
     
-    python -m SimpleHTTPServer 8000& 
+    python3 -m http.server 8000& 
     
 fi
 

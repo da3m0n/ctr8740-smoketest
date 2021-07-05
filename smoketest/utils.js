@@ -201,7 +201,7 @@ let utils = (function () {
 
                 let runs = runArrays[date] = runArrays[date] || [];
                 if (runs.length === 0) {
-                    runInfo.push({date, runs})
+                    runInfo.push({date, runs});
                 }
                 runs.push (runNumber);
             }

@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
 from smoketest.TestHelper import TestHelper
 from smoketest.TestLog import TestLog
 from smoketest.mylib.LoginHandler import LoginHandler
@@ -46,6 +47,7 @@ class RunAll:
         self.dir = Utils.log_dir()
         self.test_log = TestLog(self.dir)
         self.driver = Utils.create_driver(sys.argv[2])
+
         self.utils = Utils(self.driver, self.test_log)
         print('init')
 
@@ -137,13 +139,14 @@ class RunAll:
         # smoke_test.create(["System Configuration", "DNS"])
         # smoke_test.create(["Admin", "User Management", "Local"])
         # smoke_test.create(["Switching and Routing", "Interfaces"])
-        # smoke_test.create(["Switching and Routing", "Quality of Service", "Encoding/Decoding", "PCP"])
+        # smoke_test.create(["Switching and Routing", "RMON", "Quarter Hour"])
+#        smoke_test.create(["Switching and Routing", "Quality of Service", "Policies"])
 
         # OR
         
         # if you want to run over all the screens, remove the empty array and uncomment rest
         tests = RunAll.get_screens(self.driver)
-        # test = []
+#        tests = []
         
         for test in tests:
             try:

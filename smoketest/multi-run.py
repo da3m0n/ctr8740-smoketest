@@ -50,7 +50,7 @@ root.append(Comment('Auto Generated in multi-run.py'))
 run_dates_path = os.path.join(Utils.log_dir(), 'logs', "runInfo.txt")
 
 
-def run_some(start, end):
+def run_some(browser, start, end):
     from sys import platform as platform
 
     if platform == "win32":
@@ -59,12 +59,12 @@ def run_some(start, end):
         path_to_python = sys.executable
     else:
         path_to_python = "/cygdrive/c/cygwin64/bin/python"
+
     for i in range(start, end):
         time.sleep(2)
-        opens.append(subprocess.Popen([path_to_python, "./runAll.py", sys.argv[i], "chrome", path_to_dir]))
+        opens.append(subprocess.Popen([path_to_python, "./runAll.py", sys.argv[i], browser, path_to_dir]))
 
     [p.wait() for p in opens]
-
 
 if not os.path.exists(run_dates_path):
 
@@ -81,7 +81,7 @@ else:
 
 run_dates_file.close()
 
-for i in range(1, len(sys.argv)):
+for i in range(3, len(sys.argv)):
     # path = os.path.join(path_to_dir, Utils.format_ip_address(sys.argv[i]))
     path = os.path.normcase(os.path.join("logs", sub_path, Utils.format_ip_address(sys.argv[i])))
     field = ET.SubElement(root, "ipAddress", location=path).text = sys.argv[i]
@@ -89,9 +89,17 @@ for i in range(1, len(sys.argv)):
 tree = ET.ElementTree(root)
 tree.write(os.path.join(path_to_dir, 'ip-addresses.xml'))
 
+argStart = 1;
+browser = 'chrome'
+
+for i in range (1, len(sys.argv)):
+    if (sys.argv[i] == '-browser'):
+        argStart =  i + 2
+        browser = sys.argv[i+1]
+
 step = 3
-for i in range(1, len(sys.argv), step):
-    run_some(i, min(i + step, len(sys.argv)))
+for i in range(argStart, len(sys.argv), step):
+    run_some(browser, i, min(i + step, len(sys.argv)))
 
 Utils.print_tree(path_to_dir)
 

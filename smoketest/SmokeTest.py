@@ -30,9 +30,10 @@ class SmokeTest:
                 child_elements = content_inner.find_elements(By.XPATH, "div[starts-with(@class, "
                                                                        "'widget_')]")
                 for child in child_elements:
+
                     try:
                         child.find_element(By.XPATH, "*")
-                    except NoSuchElementException:
+                    except NoSuchElementException as e:
                         self.test_helper.assert_true(True,
                                                      name + ' page not loaded OK',
                                                      name)
@@ -55,6 +56,6 @@ class SmokeTest:
                     name += s
 
             self.test_helper.assert_true(True, name + ' not displayed', name)
-            print('Failure', e)
+            print('Failure *******', e)
 
         return True

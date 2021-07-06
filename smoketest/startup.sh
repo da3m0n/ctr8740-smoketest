@@ -38,7 +38,6 @@ if [ $MAJOR -eq 3 ]; then
     fi
 fi
 
-
 if command -v lsof ; then
 
     for i in `lsof -i :3000 -F p | grep ^p | sed s/^p//` ; do
